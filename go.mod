@@ -1,4 +1,4 @@
-module jvmao
+module github.com/arion-dsh/jvmao
 
 go 1.17
 

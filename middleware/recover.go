@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"fmt"
-	"jvmao"
 	"net/http"
 	"runtime/debug"
+
+	"github.com/arion-dsh/jvmao"
 )
 
 func Recover() jvmao.MiddlewareFunc {

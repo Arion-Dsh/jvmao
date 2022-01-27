@@ -1,8 +1,9 @@
 package main
 
 import (
-	"jvmao"
-	"jvmao/middleware"
+	"github.com/arion-dsh/jvmao/middleware"
+
+	"github.com/arion-dsh/jvmao"
 )
 
 func tM(next jvmao.HandlerFunc) jvmao.HandlerFunc {

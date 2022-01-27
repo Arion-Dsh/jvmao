@@ -3,7 +3,6 @@ package middleware
 import (
 	"bytes"
 	"io"
-	"jvmao"
 	"net"
 	"net/http"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"text/template"
 	"time"
+
+	"github.com/arion-dsh/jvmao"
 )
 
 func Logger() jvmao.MiddlewareFunc {
@@ -169,10 +170,8 @@ func (wr *loggerWR) status() string {
 		s = jvmao.TColorWrite(jvmao.BBlack, uc, "%d", code)
 	case code < 300:
 		s = jvmao.TColorWrite(jvmao.BGreen, uc, "%d", code)
-		s = colorWrite(jvmao.BGreen, "%d", code)
 	case code < 400:
 		s = jvmao.TColorWrite(jvmao.BCyan, uc, "%d", code)
-		s = colorWrite(jvmao.BCyan, "%d", code)
 	case code < 500:
 		s = jvmao.TColorWrite(jvmao.BRed, uc, "%d", code)
 	default:
