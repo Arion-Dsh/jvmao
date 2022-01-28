@@ -15,9 +15,41 @@ import (
 	"github.com/arion-dsh/jvmao"
 )
 
+// Logger return logger with defaultconfig
+//
+//	LoggerConfig{
+//		Format:     `{{real-ip}} {{id}} [{{time}}] {{uri}} {{status}} {{bytes-out}} {{referer}} {{user-agent}}`,
+//		TimeFormat: "2006-01-02 15:04:05.00000",
+//		Output:     os.Stdout,
+//	}
+//
 func Logger() jvmao.MiddlewareFunc {
 	return LoggerWithConfig(defaultLoggerConfig)
 }
+
+// LoggerConfig log config
+//
+// format tag supports:
+//
+//	- {{time}}
+//	- {{id}}
+//	- {{realip}}
+//  - {{host}}
+//  - {{uri}}
+//	- {{path}}
+//	- {{method}}
+//	- {{protocol}}
+//  - {{referer}}
+//  - {{user-agent}}
+//	- {{status}}
+//	- {{header:name}}
+//	- {{query:name}}
+//	- {{form:name}}
+//	- {{bytes-in}}
+//	- {{bytes-out}}
+//	- {{latency}}
+//	- {{latency-human}}
+//
 
 type LoggerConfig struct {
 	Format     string
@@ -31,6 +63,7 @@ var defaultLoggerConfig = LoggerConfig{
 	Output:     os.Stdout,
 }
 
+// LoggerWithConfig create logger middleware witch config
 func LoggerWithConfig(config LoggerConfig) jvmao.MiddlewareFunc {
 
 	pool := &sync.Pool{

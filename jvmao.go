@@ -2,6 +2,7 @@ package jvmao
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -224,6 +225,30 @@ func (jm *Jvmao) StartAutoTLS(addr string) error {
 	}
 
 	return jm.tlsHs.Serve(tls.NewListener(ln, jm.tlsHs.TLSConfig))
+}
+
+// Shutdown stops the server gracefully.
+//calls `http.Server#Shutdown()`.
+//
+// ie. look like:
+//
+//	quit := make(chan os.Signal, 1)
+//	signal.Notify(quit, os.Interrupt)
+//	<-quit
+//	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+//	defer cancel()
+//	if err := jm.Shutdown(ctx); err != nil {
+//		jm.Logger.Fatal(err)
+//	}
+//
+func (jm *Jvmao) Shutdown(ctx context.Context) error {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
+
+	if err := jm.tlsHs.Shutdown(ctx); err != nil {
+		return err
+	}
+	return jm.hs.Shutdown(ctx)
 }
 
 func (jm *Jvmao) newListener(addr string) (*tcpKeepAliveListener, error) {

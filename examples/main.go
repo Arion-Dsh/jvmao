@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/arion-dsh/jvmao/middleware"
 
 	"github.com/arion-dsh/jvmao"
@@ -17,7 +19,7 @@ func main() {
 	j := jvmao.New()
 
 	h := func(c *jvmao.Context) error {
-		return c.String(200, "123")
+		return c.String(http.StatusOK, "123")
 	}
 
 	j.Use(middleware.Logger())
