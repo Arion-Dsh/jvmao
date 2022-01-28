@@ -17,7 +17,7 @@ func main() {
 	j := jvmao.New()
 
 	h := func(c *jvmao.Context) error {
-		return c.NoContent(200)
+		return c.String(200, "123")
 	}
 
 	j.Use(middleware.Logger())
@@ -26,6 +26,7 @@ func main() {
 	j.GET("home", "/:id/:name", h)
 	j.Static("/home/arion/Develop/jvmao/examples/", "/static/")
 
-	j.Start(":8000")
+	j.StartTLS(":8000", "server.crt", "server.key")
+	// j.Start(":8000")
 
 }

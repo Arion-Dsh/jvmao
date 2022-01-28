@@ -26,7 +26,7 @@ type LoggerConfig struct {
 }
 
 var defaultLoggerConfig = LoggerConfig{
-	Format:     `{{real-ip}} - {{id}} [{{time}}] {{uri}} {{status}} {{bytes-out}} {{referer}} {{user-agent}}`,
+	Format:     `{{real-ip}} {{id}} [{{time}}] {{uri}} {{status}} {{bytes-out}} {{referer}} {{user-agent}}`,
 	TimeFormat: "2006-01-02 15:04:05.00000",
 	Output:     os.Stdout,
 }

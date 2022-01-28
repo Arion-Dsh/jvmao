@@ -3,9 +3,11 @@ package jvmao
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -14,7 +16,9 @@ import (
 func New() *Jvmao {
 	// logger := log.New(os.Stdout, " jvmao: ", 0)
 	jm := &Jvmao{
-		hs: new(http.Server),
+		hs:             new(http.Server),
+		tlsHs:          new(http.Server),
+		tcpAlivePeriod: time.Minute * 3,
 
 		renderer:        new(DefaultRenderer),
 		NotFoundHandler: defaultNotFoundHandler,
@@ -31,13 +35,18 @@ func New() *Jvmao {
 
 // Jumao ...
 type Jvmao struct {
-	mu sync.Mutex
+	mu   sync.Mutex
+	pool sync.Pool
 
 	mux *mux
-	hs  *http.Server
-	h2s *http2.Server
 
-	pool sync.Pool
+	// listener       net.Listener
+	// tlsListener    net.Listener
+
+	hs    *http.Server
+	tlsHs *http.Server
+
+	tcpAlivePeriod time.Duration
 
 	middleware      []MiddlewareFunc
 	renderer        Renderer
@@ -137,15 +146,76 @@ func (jm *Jvmao) OpenDebug() {
 	defer jm.mu.Unlock()
 	jm.debug = true
 	jm.Logger.SetPriority(LOG_PRINT)
+}
+
+func (jm *Jvmao) SetTCPAlivePeriod(d time.Duration) {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
+
+	jm.tcpAlivePeriod = d
 
 }
+
+//Start start an http/2 server with h2c.
 func (jm *Jvmao) Start(addr string) error {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
 
 	h2s := new(http2.Server)
-	// jm.hs.ErrorLog =
 	jm.hs.Addr = addr
 	jm.hs.Handler = h2c.NewHandler(jm.mux, h2s)
+	ln, err := jm.newListener(addr)
+	if err != nil {
+		return err
+	}
+	return jm.hs.Serve(ln)
 
-	return jm.hs.ListenAndServe()
+}
 
+// StartTLS start an HTTPS server.
+func (jm *Jvmao) StartTLS(addr string, certFile, keyFile string) error {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
+
+	jm.tlsHs.Addr = addr
+	jm.tlsHs.Handler = jm.mux
+
+	http2.ConfigureServer(jm.tlsHs, &http2.Server{
+		NewWriteScheduler: func() http2.WriteScheduler {
+			return http2.NewPriorityWriteScheduler(nil)
+		},
+	})
+
+	ln, err := jm.newListener(addr)
+	if err != nil {
+		return err
+	}
+
+	return jm.tlsHs.ServeTLS(ln, certFile, keyFile)
+}
+
+func (jm *Jvmao) newListener(addr string) (*tcpKeepAliveListener, error) {
+
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tcpKeepAliveListener{ln.(*net.TCPListener), jm.tcpAlivePeriod}, nil
+
+}
+
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+	alivePeriod time.Duration
+}
+
+func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(ln.alivePeriod)
+	return tc, nil
 }
