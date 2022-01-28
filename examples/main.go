@@ -26,7 +26,8 @@ func main() {
 	j.GET("home", "/:id/:name", h)
 	j.Static("/home/arion/Develop/jvmao/examples/", "/static/")
 
-	j.StartTLS(":8000", "server.crt", "server.key")
+	// j.StartTLS(":8000", "server.crt", "server.key")
 	// j.Start(":8000")
+	j.StartAutoTLS(":8000")
 
 }
