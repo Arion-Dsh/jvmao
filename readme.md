@@ -13,7 +13,7 @@ look like:
     jm := jvmao.New()
 
     jm.GET("home", "/", func(c *jvmao.Context)error{
-        c.String(http.SatusOK, "home page)
+       return c.String(http.SatusOK, "home page)
     })
 
     jm.Start(":8000")

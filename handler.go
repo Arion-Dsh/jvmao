@@ -4,6 +4,7 @@ import (
 	"net/http"
 )
 
+// HandlerFunc responds to an HTTP request.
 type HandlerFunc func(*Context) error
 
 type HTTPErrorHandler func(err error, c *Context)

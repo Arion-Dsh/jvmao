@@ -1,5 +1,6 @@
 package jvmao
 
+// MiddlewareFunc ...
 type MiddlewareFunc func(HandlerFunc) HandlerFunc
 
 func applyMiddleware(h HandlerFunc, middleware ...MiddlewareFunc) HandlerFunc {
