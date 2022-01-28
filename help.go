@@ -9,8 +9,6 @@ import (
 	"sync"
 )
 
-// type Terminal struct{}
-
 var tPool sync.Pool
 
 var isTTY bool

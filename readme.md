@@ -11,9 +11,10 @@ look like:
 ## useage
 
     jm := jvmao.New()
+	jm.Use(middleware.Logger())
 
     jm.GET("home", "/", func(c *jvmao.Context)error{
-       return c.String(http.SatusOK, "home page)
+       return c.String(http.SatusOK, "home page")
     })
 
     jm.Start(":8000")

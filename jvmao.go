@@ -16,8 +16,8 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
+//New return a instance of Jvmao.
 func New() *Jvmao {
-	// logger := log.New(os.Stdout, " jvmao: ", 0)
 	jm := &Jvmao{
 		hs:    new(http.Server),
 		tlsHs: new(http.Server),
@@ -39,7 +39,7 @@ func New() *Jvmao {
 	return jm
 }
 
-// Jumao ...
+// Jumao top-level instance.
 type Jvmao struct {
 	mu   sync.Mutex
 	pool sync.Pool
