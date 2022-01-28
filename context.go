@@ -2,6 +2,7 @@ package jvmao
 
 import (
 	"bytes"
+	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -90,8 +91,9 @@ func (c *Context) WriteHeader(statusCode int) {
 func (c *Context) Render(statusCode int, tmpl string, data interface{}) (err error) {
 
 	buf := new(bytes.Buffer)
+
 	if err = c.jm.renderer.Render(buf, tmpl, data, c); err != nil {
-		return
+		return c.Error(err)
 	}
 
 	return c.Blob(statusCode, MIMETextHTMLUTF8, buf.Bytes())
@@ -126,6 +128,17 @@ func (c *Context) Blob(statusCode int, contentType string, b []byte) (err error)
 	return
 }
 
+//Json send a json response with status code.
+func (c *Context) Json(code int, i interface{}) error {
+
+	b, err := json.Marshal(i)
+	if err != nil {
+		return c.Error(err)
+	}
+	return c.Blob(code, MIMEApplicationJSONUTF8, b)
+}
+
+//File send a file response with status code
 func (c *Context) File(dir http.Dir, file string) error {
 	const indexPage = "index.html"
 

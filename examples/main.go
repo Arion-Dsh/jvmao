@@ -25,11 +25,11 @@ func main() {
 	j.Use(middleware.Logger())
 	j.Use(middleware.Recover())
 	j.Use(tM)
-	j.GET("home", "/:id/:name", h)
+	j.GET("home", "", h)
 	j.Static("/home/arion/Develop/jvmao/examples/", "/static/")
 
 	// j.StartTLS(":8000", "server.crt", "server.key")
-	// j.Start(":8000")
-	j.StartAutoTLS(":8000")
+	j.Start(":8000")
+	// j.StartAutoTLS(":8000")
 
 }
