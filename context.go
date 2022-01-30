@@ -3,6 +3,7 @@ package jvmao
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -13,6 +14,9 @@ type Context interface {
 	Request() *http.Request
 
 	Response() *Response
+
+	//Reverse the path with name.
+	Reverse(name string, params ...string) string
 
 	Set(key string, value interface{})
 
@@ -73,10 +77,13 @@ type Context interface {
 	Blob(statusCode int, contentType string, b []byte) (err error)
 
 	//Json send a json response with status code.
-	Json(code int, i interface{}) error
+	Json(statusCode int, i interface{}) error
 
 	//File send a file response with status code
 	File(dir http.Dir, file string) error
+
+	//Redirect to provided URL
+	Redirect(statusCode int, url string) error
 
 	Logger() Logger
 }
@@ -98,6 +105,10 @@ func (c *context) Request() *http.Request {
 
 func (c *context) Response() *Response {
 	return c.w
+}
+
+func (c *context) Reverse(name string, params ...string) string {
+	return c.jm.Reverse(name, params)
 }
 
 func (c *context) Set(key string, value interface{}) {
@@ -191,6 +202,7 @@ func (c *context) Error(err error) error {
 	c.jm.HTTPErrHandler(err, c)
 	return nil
 }
+
 func (c *context) NoContent(statusCode int) error {
 	c.WriteHeader(statusCode)
 	return nil
@@ -215,13 +227,13 @@ func (c *context) Blob(statusCode int, contentType string, b []byte) (err error)
 }
 
 //Json send a json response with status code.
-func (c *context) Json(code int, i interface{}) error {
+func (c *context) Json(statusCode int, i interface{}) error {
 
 	b, err := json.Marshal(i)
 	if err != nil {
 		return c.Error(err)
 	}
-	return c.Blob(code, MIMEApplicationJSONUTF8, b)
+	return c.Blob(statusCode, MIMEApplicationJSONUTF8, b)
 }
 
 //File send a file response with status code
@@ -252,12 +264,22 @@ func (c *context) File(dir http.Dir, file string) error {
 	return nil
 }
 
-func (c *context) setHct(t string) {
-	c.SetHeader(HeaderContentType, t)
-}
-
 func (c *context) Logger() Logger {
 	return c.jm.Logger
+}
+
+func (c *context) Redirect(statusCode int, url string) error {
+	if statusCode < 300 || statusCode > 308 {
+		return errors.New("invalid redirect status code.")
+	}
+
+	c.SetHeader("Location", url)
+	c.WriteHeader(statusCode)
+	return nil
+}
+
+func (c *context) setHct(t string) {
+	c.SetHeader(HeaderContentType, t)
 }
 
 func (c *context) reset(w http.ResponseWriter, r *http.Request) {
