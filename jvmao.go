@@ -2,7 +2,7 @@ package jvmao
 
 import (
 	"bytes"
-	"context"
+	ctx "context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -32,7 +32,7 @@ func New() *Jvmao {
 	}
 	jm.Logger = DefaultLogger()
 	jm.pool = sync.Pool{New: func() interface{} {
-		return &Context{jm: jm, w: NewResponse(jm, nil)}
+		return &context{jm: jm, w: NewResponse(jm, nil)}
 	}}
 	jm.mux = newMux(jm)
 
@@ -241,7 +241,7 @@ func (jm *Jvmao) StartAutoTLS(addr string) error {
 //		jm.Logger.Fatal(err)
 //	}
 //
-func (jm *Jvmao) Shutdown(ctx context.Context) error {
+func (jm *Jvmao) Shutdown(ctx ctx.Context) error {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
 

@@ -31,14 +31,14 @@ func newMux(jm *Jvmao) *mux {
 }
 
 func (mux *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c := mux.jm.pool.Get().(*Context)
+	c := mux.jm.pool.Get().(*context)
 	defer mux.jm.pool.Put(c)
 	c.reset(w, r)
 
 	var err error
 	var es *entity
 
-	h := func(c *Context) error {
+	h := func(c Context) error {
 		mux.jm.HTTPErrHandler(err, c)
 		return nil
 	}
@@ -47,7 +47,7 @@ func (mux *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if es, err = mux.root.matchPath(r.URL.Path, []string{}); err == nil {
 		if hf, ok := es.hf[r.Method]; ok {
 			for i, n := range es.pName {
-				c.param[n] = es.pValue[i]
+				c.params.Set(n, es.pValue[i])
 			}
 			h = hf
 			err = nil

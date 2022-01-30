@@ -77,7 +77,7 @@ func LoggerWithConfig(config LoggerConfig) jvmao.MiddlewareFunc {
 	f := formatf(config.Format)
 
 	return func(next jvmao.HandlerFunc) jvmao.HandlerFunc {
-		return func(c *jvmao.Context) error {
+		return func(c jvmao.Context) error {
 			req := c.Request()
 			resp := c.Response()
 			wr := pool.Get().(*loggerWR)

@@ -12,7 +12,7 @@ import (
 // and returns a HTTP 500 (Internal Server Error) status if possible.
 func Recover() jvmao.MiddlewareFunc {
 	return func(next jvmao.HandlerFunc) jvmao.HandlerFunc {
-		return func(c *jvmao.Context) error {
+		return func(c jvmao.Context) error {
 			defer func() {
 				if rvr := recover(); rvr != nil {
 
