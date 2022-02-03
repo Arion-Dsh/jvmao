@@ -47,7 +47,7 @@ func (mux *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if es, err = mux.root.matchPath(r.URL.Path, []string{}); err == nil {
 		if hf, ok := es.hf[r.Method]; ok {
 			for i, n := range es.pName {
-				c.params.Set(n, es.pValue[i])
+				c.params.Add(n, es.pValue[i])
 			}
 			h = hf
 			err = nil

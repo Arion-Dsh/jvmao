@@ -8,7 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strings"
 )
+
+const maxMemory = 32 << 20 // 32 MB
 
 type Context interface {
 	Request() *http.Request
@@ -24,6 +27,8 @@ type Context interface {
 
 	Del(key string)
 
+	WriteHeader(statusCode int)
+
 	// Cookie returns the named cookie provided in the request or ErrNoCookie
 	// if not found. If multiple cookies match the given name, only one cookie
 	// will be returned.
@@ -35,8 +40,11 @@ type Context interface {
 	// Query return all query values in url.
 	Query() url.Values
 
-	// QueryValue get query value.
+	// QueryValue returns first value with the given key.
 	QueryValue(key string) string
+
+	// QueryValues returns all values with the given key
+	QueryValues(key string) []string
 
 	// Param is the parameters in route pattern.
 	// such as "id" in /post/:id .
@@ -45,19 +53,20 @@ type Context interface {
 	// ParamValue get the parameter.
 	ParamValue(key string) string
 
+	// ParamValue get the parameter.
+	ParamValues(key string) []string
+
+	// FormValue returns firs value with the given name.
+	// it calls ParseMultipartForm and ParseForm
+	// if necessary and ignores any errors returned by these functions.
 	FormValue(name string) string
 
+	// FormValues returns all values with the given name.
+	// it calls ParseMultipartForm and ParseForm
+	// if necessary and ignores any errors returned by these functions.
+	FormValues(name string) []string
+
 	FormFile(name string) (*multipart.FileHeader, error)
-
-	Header() http.Header
-
-	SetHeader(key, value string)
-
-	GetHeader(key string) string
-
-	DelHeader(key string)
-
-	WriteHeader(statusCode int)
 
 	//Render render a template then send a HTML response with status code
 	// it'll use the DefalultRenderer when the jumao's Renderer was not set
@@ -127,6 +136,10 @@ func (c *context) Del(key string) {
 	delete(c.data, key)
 }
 
+func (c *context) WriteHeader(statusCode int) {
+	c.w.WriteHeader(statusCode)
+}
+
 func (c *context) Cookie(name string) (*http.Cookie, error) {
 	return c.r.Cookie(name)
 }
@@ -140,7 +153,11 @@ func (c *context) Query() url.Values {
 }
 
 func (c *context) QueryValue(key string) string {
-	return c.r.URL.Query().Get(key)
+	return c.Query().Get(key)
+}
+
+func (c *context) QueryValues(key string) []string {
+	return c.Query()[key]
 }
 
 func (c *context) Param() url.Values {
@@ -151,8 +168,20 @@ func (c *context) ParamValue(key string) string {
 	return c.params.Get(key)
 }
 
+func (c *context) ParamValues(key string) []string {
+	return c.params[key]
+}
+
 func (c *context) FormValue(name string) string {
-	return c.r.FormValue(name)
+	c.ParseForm()
+	return c.r.PostFormValue(name)
+}
+
+func (c *context) FormValues(name string) []string {
+
+	c.ParseForm()
+
+	return c.r.PostForm[name]
 }
 
 func (c *context) FormFile(name string) (*multipart.FileHeader, error) {
@@ -164,23 +193,12 @@ func (c *context) FormFile(name string) (*multipart.FileHeader, error) {
 	return fh, nil
 }
 
-func (c *context) Header() http.Header {
-	return c.w.Header()
-}
-func (c *context) SetHeader(key, value string) {
-	c.w.Header().Set(key, value)
-}
-
-func (c *context) GetHeader(key string) string {
-	return c.w.Header().Get(key)
-}
-
-func (c *context) DelHeader(key string) {
-	c.w.Header().Del(key)
-}
-
-func (c *context) WriteHeader(statusCode int) {
-	c.w.WriteHeader(statusCode)
+func (c *context) ParseForm() error {
+	if strings.HasPrefix(c.r.Header.Get(HeaderContentType), MIMEMultipartForm) {
+		return c.r.ParseMultipartForm(maxMemory)
+	} else {
+		return c.r.ParseForm()
+	}
 }
 
 //Render render a template then send a HTML response with status code
@@ -273,13 +291,13 @@ func (c *context) Redirect(statusCode int, url string) error {
 		return errors.New("invalid redirect status code.")
 	}
 
-	c.SetHeader("Location", url)
+	c.w.Header().Add(HeaderLocation, url)
 	c.WriteHeader(statusCode)
 	return nil
 }
 
 func (c *context) setHct(t string) {
-	c.SetHeader(HeaderContentType, t)
+	c.w.Header().Add(HeaderContentType, t)
 }
 
 func (c *context) reset(w http.ResponseWriter, r *http.Request) {

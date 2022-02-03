@@ -30,6 +30,9 @@ const (
 	HeaderSetCookie       = "Set-Cookie"
 	HeaderWWWAuthenticate = "WWW-Authenticate"
 
-	HeaderXRealIP    = "X-Real-IP"
-	HeaderXRequestID = "X-Request-ID"
+	HeaderXRealIP             = "X-Real-IP"
+	HeaderXRequestID          = "X-Request-ID"
+	HeaderXContentTypeOptions = "X-Content-Type-Options"
+
+	HeaderLocation = "Location"
 )
