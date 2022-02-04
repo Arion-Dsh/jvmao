@@ -1,7 +1,6 @@
 package jvmao
 
 import (
-	"errors"
 	"net/http"
 	"path"
 	"sort"
@@ -38,12 +37,10 @@ func (mux *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var es *entity
 
-	h := func(c Context) error {
-		mux.jm.HTTPErrHandler(err, c)
-		return nil
-	}
+	h := mux.jm.NotFoundHandler
 
 	err = NewHTTPError(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+
 	if es, err = mux.root.matchPath(r.URL.Path, []string{}); err == nil {
 		if hf, ok := es.hf[r.Method]; ok {
 			for i, n := range es.pName {
@@ -58,19 +55,18 @@ func (mux *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if containsDotDot(r.URL.Path) {
 			err = NewHTTPError(http.StatusBadRequest, "invalid URL path")
 		} else {
-			err = c.File(mux.sRoot, r.URL.Path)
+			p := strings.TrimPrefix(r.URL.Path, mux.sPrefix)
+			err = c.File(mux.sRoot, p)
 			if err != nil {
 				err = NewHTTPErrorWithError(err)
 			}
 		}
 	}
-
 	// apply middleware
 	h = applyMiddleware(h, mux.jm.middleware...)
 
 	if err != nil {
-		h(c)
-		return
+		c.Error(err)
 	}
 
 	if err = h(c); err != nil {
@@ -143,7 +139,7 @@ type entities []*entity
 
 func (e *entry) matchPath(path string, pValue []string) (es *entity, err error) {
 
-	err = errors.New("not found")
+	err = NewHTTPError(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 	if len(path) == 0 {
 		return
 	}

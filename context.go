@@ -68,6 +68,10 @@ type Context interface {
 
 	FormFile(name string) (*multipart.FileHeader, error)
 
+	BindForm(i interface{}) error
+	BindQuery(i interface{}) error
+	BindParam(i interface{}) error
+
 	//Render render a template then send a HTML response with status code
 	// it'll use the DefalultRenderer when the jumao's Renderer was not set
 	Render(statusCode int, tmpl string, data interface{}) (err error)
@@ -266,6 +270,7 @@ func (c *context) File(dir http.Dir, file string) error {
 	fi, err := f.Stat()
 	if fi.IsDir() {
 		file = filepath.Join(file, indexPage)
+		file = filepath.ToSlash(file)
 		f, err = dir.Open(file)
 		if err != nil {
 			return err

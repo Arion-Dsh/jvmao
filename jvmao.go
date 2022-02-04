@@ -81,6 +81,7 @@ func (jm *Jvmao) Static(root, prefix string) {
 	if !strings.HasPrefix(prefix, "/") {
 		prefix = "/" + prefix
 	}
+
 	jm.mux.setStatic(root, prefix)
 }
 

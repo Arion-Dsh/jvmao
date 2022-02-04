@@ -23,7 +23,7 @@ func main() {
 	}
 
 	j.Use(middleware.Logger())
-	j.Use(middleware.Recover())
+	// j.Use(middleware.Recover())
 	j.Use(tM)
 
 	j.GET("home", "", h)
@@ -31,7 +31,7 @@ func main() {
 	g := j.Group("/group")
 	g.GET("g-home", "", h)
 
-	j.Static("/home/arion/Develop/jvmao/examples/", "/static/")
+	j.Static("static/", "/static/")
 
 	// j.StartTLS(":8000", "server.crt", "server.key")
 	j.Start(":8000")

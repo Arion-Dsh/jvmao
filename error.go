@@ -43,3 +43,9 @@ func NewHTTPErrorWithError(err error) error {
 	}
 	return NewHTTPError(code, msg)
 }
+
+func errHandler(err error) HandlerFunc {
+	return func(c Context) error {
+		return c.Error(err)
+	}
+}
