@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -85,6 +86,12 @@ func (jm *Jvmao) Static(root, prefix string) {
 	jm.mux.setStatic(root, prefix)
 }
 
+func (jm *Jvmao) File(file, path string) {
+	jm.GET(file, file, func(c Context) error {
+		return c.File(http.Dir(filepath.Dir(path)), file)
+	})
+}
+
 func (jm *Jvmao) CONNECT(name, pattern string, handler HandlerFunc) {
 	jm.handle(name, http.MethodConnect, pattern, handler)
 }
@@ -120,10 +127,14 @@ func (jm *Jvmao) handle(name, method, pattern string, h HandlerFunc) {
 		pattern = "/" + pattern
 	}
 
+	if name == "" {
+		name = fmt.Sprintf("%p%s", &h, pattern)
+	}
+
 	jm.mux.handle(name, method, pattern, h)
 }
 
-func (jm *Jvmao) Reverse(name string, params ...interface{}) string {
+func (jm *Jvmao) Reverse(name string, params ...string) string {
 	uri := new(bytes.Buffer)
 
 	l := len(params)
@@ -132,11 +143,24 @@ func (jm *Jvmao) Reverse(name string, params ...interface{}) string {
 		if c != l {
 			panic(fmt.Sprintf("Reverse error: need %d params but get %d", c, l))
 		}
+		if l == 0 {
+			return p
+		}
+
+		// /sf/: id /:sdf/d
 		for i := 0; i < l; i++ {
-			ps := strings.Split(p, ":")
+			ps := strings.SplitN(p, ":", 2)
 			uri.WriteString(ps[0])
 			uri.WriteString(fmt.Sprintf("%v", params[i]))
-			p = p[strings.Index(p, "/"):]
+			p = ps[1]
+			slash := strings.Index(p, "/")
+			if slash > 0 {
+				p = p[slash:]
+			}
+
+		}
+		if strings.HasPrefix(p, "/") {
+			uri.WriteString(p)
 		}
 	}
 

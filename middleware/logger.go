@@ -102,7 +102,7 @@ func LoggerWithConfig(config LoggerConfig) jvmao.MiddlewareFunc {
 
 func formatf(s string) string {
 
-	s = regexp.MustCompile(`(\{[^\}]+)+`).ReplaceAllStringFunc(s, func(sub string) string {
+	s = regexp.MustCompile(`(\{[^\}]+)`).ReplaceAllStringFunc(s, func(sub string) string {
 		return strings.ReplaceAll(sub, " ", "")
 	})
 

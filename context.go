@@ -121,7 +121,7 @@ func (c *context) Response() *Response {
 }
 
 func (c *context) Reverse(name string, params ...string) string {
-	return c.jm.Reverse(name, params)
+	return c.jm.Reverse(name, params...)
 }
 
 func (c *context) Set(key string, value interface{}) {
@@ -212,7 +212,7 @@ func (c *context) Render(statusCode int, tmpl string, data interface{}) (err err
 	buf := new(bytes.Buffer)
 
 	if err = c.jm.renderer.Render(buf, tmpl, data, c); err != nil {
-		return c.Error(err)
+		panic(err)
 	}
 
 	return c.Blob(statusCode, MIMETextHTMLUTF8, buf.Bytes())
