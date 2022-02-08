@@ -18,6 +18,10 @@ func TestMux(t *testing.T) {
 	}
 }
 
+func getEntity(pat string) *entity {
+	return &entity{pat: pat}
+}
+
 func TestEntry(t *testing.T) {
 
 	et := new(entry)
@@ -27,6 +31,9 @@ func TestEntry(t *testing.T) {
 	et.addPat("/abcd", &entity{pat: "3"})
 	et.addPat("/ab", &entity{pat: "4"})
 	et.addPat("/abc", &entity{pat: "5"})
+	et.addPat("/:*", getEntity("6"))
+	et.addPat("/:*/:*", getEntity("7"))
+	et.addPat("/", getEntity("8"))
 
 	paths := map[string]string{
 		"1": "/abc/sf/d/123",
@@ -34,6 +41,9 @@ func TestEntry(t *testing.T) {
 		"3": "/abcd",
 		"4": "/ab",
 		"5": "/abc",
+		"6": "/w",
+		"7": "/w/q",
+		"8": "/",
 	}
 	ctx := new(muxCtx)
 	for pat, url := range paths {
@@ -44,7 +54,7 @@ func TestEntry(t *testing.T) {
 				t.Error("error: ", e.pat)
 			}
 		} else {
-			t.Fatal("error:", pat)
+			t.Fatal("error not match:", pat)
 		}
 
 	}

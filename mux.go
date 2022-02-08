@@ -33,6 +33,7 @@ func (c *muxCtx) param(p string) {
 
 func (c *muxCtx) reset() {
 	c.pValue = []string{}
+	c.handler = nil
 }
 
 func newMux(jm *Jvmao) *mux {
@@ -55,18 +56,7 @@ func (mux *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err := NewHTTPError(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 
-	if es := mux.root.match(mux.ctx, r.URL.Path); es != nil {
-
-		if hf, ok := es.hf[r.Method]; ok {
-			for i, n := range es.pName {
-				c.params.Add(n, mux.ctx.pValue[i])
-			}
-			mux.ctx.handler = hf
-			err = nil
-		}
-	}
-
-	if mux.sPrefix != "" && strings.HasPrefix(r.URL.Path, mux.sPrefix) {
+	if strings.HasPrefix(r.URL.Path, mux.sPrefix) {
 		if containsDotDot(r.URL.Path) {
 			err = NewHTTPError(http.StatusBadRequest, "invalid URL path")
 		} else {
@@ -74,6 +64,17 @@ func (mux *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			err = c.File(mux.sRoot, p)
 			if err != nil {
 				err = NewHTTPErrorWithError(err)
+			}
+		}
+	} else {
+		if es := mux.root.match(mux.ctx, r.URL.Path); es != nil {
+
+			if hf, ok := es.hf[r.Method]; ok {
+				for i, n := range es.pName {
+					c.params.Add(n, mux.ctx.pValue[i])
+				}
+				mux.ctx.handler = hf
+				err = nil
 			}
 		}
 	}
