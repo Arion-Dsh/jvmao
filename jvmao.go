@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -23,7 +24,9 @@ func New() *Jvmao {
 		hs:    new(http.Server),
 		tlsHs: new(http.Server),
 		AutoTLSManager: autocert.Manager{
+			// Cache:  autocert.DirCache("secret-dir"),
 			Prompt: autocert.AcceptTOS,
+			// HostPolicy: autocert.HostWhitelist("example.org", "www.example.org"),
 		},
 		tcpAlivePeriod: time.Minute * 3,
 
@@ -236,7 +239,17 @@ func (jm *Jvmao) StartAutoTLS(addr string) error {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
 
-	jm.tlsHs.TLSConfig = jm.AutoTLSManager.TLSConfig().Clone()
+	jm.tlsHs.TLSConfig = &tls.Config{
+		GetCertificate: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			cert, err := jm.AutoTLSManager.GetCertificate(hello)
+			if err != nil {
+				jm.Logger.Error(fmt.Sprintf("Jvmao: GetCertificate: %v", err))
+			}
+			return cert, err
+		},
+	}
+
+	jm.tlsHs.TLSConfig.NextProtos = append(jm.tlsHs.TLSConfig.NextProtos, acme.ALPNProto)
 
 	http2.ConfigureServer(jm.tlsHs, &http2.Server{
 		NewWriteScheduler: func() http2.WriteScheduler {
