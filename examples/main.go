@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/arion-dsh/jvmao/middleware"
-	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/arion-dsh/jvmao"
 )
@@ -36,9 +35,9 @@ func main() {
 	j.Static("static/", "/static/")
 
 	// err := j.StartTLS(":8000", "server.crt", "server.key")
-	// err := j.Start(":8000")
-	j.AutoTLSManager.HostPolicy = autocert.HostWhitelist("example.org", "localhost")
-	err := j.StartAutoTLS(":4430")
+	err := j.Start(":8000")
+	// j.AutoTLSManager.HostPolicy = autocert.HostWhitelist("example.org", "localhost")
+	// err := j.StartAutoTLS(":4430")
 	fmt.Println(err)
 
 }
