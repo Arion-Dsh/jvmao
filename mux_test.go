@@ -25,24 +25,20 @@ func getEntity(pat string) *entity {
 func TestEntry(t *testing.T) {
 
 	et := new(entry)
-	et.addPat("/a/:*/c", &entity{pat: "0"})
+	et.addPat("/:*/:*", &entity{pat: "0"})
+	et.addPat("/:*", &entity{pat: "2"})
 	et.addPat("/abc/:*/d/:*", &entity{pat: "1"})
-	et.addPat("/a/:*", &entity{pat: "2"})
 	et.addPat("/abcd", &entity{pat: "3"})
 	et.addPat("/ab", &entity{pat: "4"})
 	et.addPat("/abc", &entity{pat: "5"})
-	et.addPat("/:*", getEntity("6"))
-	et.addPat("/:*/:*", getEntity("7"))
 	et.addPat("/", getEntity("8"))
 
 	paths := map[string]string{
-		"1": "/abc/sf/d/123",
-		"2": "/a/sf",
+		"2": "/a",
+		"0": "/a/s13",
 		"3": "/abcd",
 		"4": "/ab",
 		"5": "/abc",
-		"6": "/w",
-		"7": "/w/q",
 		"8": "/",
 	}
 	ctx := new(muxCtx)

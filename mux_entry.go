@@ -45,17 +45,18 @@ func (e *entry) match(ctx *muxCtx, path string) *entity {
 
 		switch entryTyp(typ) {
 		case typParam:
-			sub = ss.findSub('*')
 			ps := strings.SplitN(path, "/", 2)
 			pattern := "*"
 			if len(ps) == 2 && len(ps[1]) > 0 {
 				pattern = "*/" + ps[1]
 			}
+			sub = ss.findSub('*')
 			if !strings.HasPrefix(pattern, sub.pattern) {
 				continue
 			}
 			path = strings.TrimPrefix(pattern, sub.pattern)
 			ctx.param(ps[0])
+
 		default:
 			sub = ss.findSub(path[0])
 			if sub == nil || !strings.HasPrefix(path, sub.pattern) {
@@ -109,11 +110,15 @@ func (e *entry) addPat(pat string, es *entity) {
 	e.subDel(sub)
 
 	common := longestCommon(pp, sub.pattern)
-	et := &entry{pattern: pp[:common], prefix: prefix, typ: typ}
+	et := &entry{pattern: pp[:common], prefix: prefix, typ: typStatic}
+	if strings.HasPrefix(et.pattern, "*") {
+		et.typ = typParam
+	}
 	// split sub entry
 	if len(sub.pattern) > common {
 		sub.pattern = sub.pattern[common:]
 		sub.prefix = sub.pattern[0]
+		sub.typ = typStatic
 		et.subAdd(sub)
 	} else {
 		et = sub
@@ -157,7 +162,6 @@ func (e *entry) subDel(sub *entry) {
 
 func (e *entry) subAdd(sub *entry) {
 	subs := e.sub[sub.typ]
-
 	e.sub[sub.typ] = append(subs, sub)
 	e.sub[sub.typ].Sort()
 }
@@ -204,7 +208,7 @@ func splitPat(p string) (t entryTyp, pp, next string) {
 
 	t = typStatic
 
-	// /saf/:afg/sdf
+	// /saf/ :*/sdf
 	ps := strings.SplitN(p, ":", 2)
 	pp = ps[0]
 	if len(ps) == 2 {
@@ -212,8 +216,8 @@ func splitPat(p string) (t entryTyp, pp, next string) {
 	}
 	if strings.HasPrefix(pp, "*") {
 		t = typParam
-
 	}
+
 	return
 
 }
