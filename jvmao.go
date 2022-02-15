@@ -16,6 +16,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 )
 
 //New return a instance of Jvmao.
@@ -29,6 +30,8 @@ func New() *Jvmao {
 			// HostPolicy: autocert.HostWhitelist("example.org", "www.example.org"),
 		},
 		tcpAlivePeriod: time.Minute * 3,
+
+		grpc: new(grpcServer),
 
 		renderer:        new(DefaultRenderer),
 		NotFoundHandler: defaultNotFoundHandler,
@@ -53,6 +56,8 @@ type Jvmao struct {
 	// listener       net.Listener
 	// tlsListener    net.Listener
 
+	grpc *grpcServer
+
 	hs             *http.Server
 	tlsHs          *http.Server
 	AutoTLSManager autocert.Manager
@@ -66,6 +71,12 @@ type Jvmao struct {
 	Logger          Logger
 
 	debug bool
+}
+
+func (jm *Jvmao) RegisterGrpcServer(s *grpc.Server) {
+	jm.mu.Lock()
+	defer jm.mu.Unlock()
+	jm.grpc.srv = s
 }
 
 func (jm *Jvmao) SetRenderer(r Renderer) {
@@ -200,7 +211,7 @@ func (jm *Jvmao) Start(addr string) error {
 
 	h2s := new(http2.Server)
 	jm.hs.Addr = addr
-	jm.hs.Handler = h2c.NewHandler(jm.mux, h2s)
+	jm.hs.Handler = h2c.NewHandler(jm, h2s)
 	ln, err := jm.newListener(addr)
 	if err != nil {
 		return err
@@ -215,7 +226,7 @@ func (jm *Jvmao) StartTLS(addr string, certFile, keyFile string) error {
 	defer jm.mu.Unlock()
 
 	jm.tlsHs.Addr = addr
-	jm.tlsHs.Handler = jm.mux
+	jm.tlsHs.Handler = jm
 
 	http2.ConfigureServer(jm.tlsHs, &http2.Server{
 		NewWriteScheduler: func() http2.WriteScheduler {
@@ -238,6 +249,9 @@ func (jm *Jvmao) StartTLS(addr string, certFile, keyFile string) error {
 func (jm *Jvmao) StartAutoTLS(addr string) error {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
+
+	jm.tlsHs.Addr = addr
+	jm.tlsHs.Handler = jm
 
 	jm.tlsHs.TLSConfig = &tls.Config{
 		GetCertificate: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
@@ -287,6 +301,16 @@ func (jm *Jvmao) Shutdown(ctx ctx.Context) error {
 		return err
 	}
 	return jm.hs.Shutdown(ctx)
+}
+
+// ServeHTTP implements http.Handler
+// more see [http.Handler]https://pkg.go.dev/net/http#Handler
+func (jm *Jvmao) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if jm.grpc.isGrpc(r) {
+		jm.grpc.ServeHTTP(w, r)
+		return
+	}
+	jm.mux.ServeHTTP(w, r)
 }
 
 func (jm *Jvmao) newListener(addr string) (*tcpKeepAliveListener, error) {

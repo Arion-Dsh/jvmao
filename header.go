@@ -16,6 +16,9 @@ const (
 	MIMEApplicationJSONUTF8       = "application/json; " + charsetUTF8
 	MIMEApplicationForm           = "application/x-www-form-urlencoded"
 	MIMEMultipartForm             = "multipart/form-data"
+	MIMEApplicationGrpc           = "application/grpc"
+	MIMEApplicationGrpcWeb        = "application/grpc-web"
+	MIMEApplicationGrpcWebText    = "application/grpc-web-text"
 )
 
 // Headers
