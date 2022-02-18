@@ -8,8 +8,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-func newGrpcServer() *grpcServer {
-	return &grpcServer{
+// NewGrpcHandler instance of GrpcHandler
+func NewGrpcHandler() *GrpcHandler {
+	return &GrpcHandler{
 		pool: sync.Pool{
 			New: func() interface{} {
 				return &grpcResponse{}
@@ -18,38 +19,46 @@ func newGrpcServer() *grpcServer {
 	}
 }
 
-type grpcServer struct {
+// GrpcHandler carries *grpc.Server.
+// it is can handle grpc-web request.
+type GrpcHandler struct {
+	mux sync.Mutex
+
 	srv *grpc.Server
 
 	pool sync.Pool
 }
 
-func (g *grpcServer) register(s *grpc.Server) {
+// RegisterGrpcServer registerGrpcServer to handle.
+func (g *GrpcHandler) RegisterGrpcServer(s *grpc.Server) {
+	g.mux.Lock()
 	g.srv = s
+	g.mux.Unlock()
 }
 
-func (g *grpcServer) isGrpc(r *http.Request) bool {
+//IsGrpc test *http.Request content type has prefix application/grpc or not.
+func IsGrpc(r *http.Request) bool {
 	return r.Method == http.MethodPost && strings.HasPrefix(r.Header.Get(HeaderContentType), MIMEApplicationGrpc)
-
 }
 
-func (g *grpcServer) isGrpcWeb(r *http.Request) bool {
+func (g *GrpcHandler) isGrpcWeb(r *http.Request) bool {
 	return strings.HasPrefix(r.Header.Get(HeaderContentType), MIMEApplicationGrpcWeb)
 }
 
-func (g *grpcServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// ServeHTTP implements http.Handler
+// it will fake out grpc-web that carries standard gRPC.
+func (g *GrpcHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if g.srv == nil {
 		return
 	}
 	if g.isGrpcWeb(r) {
-		// g.handleGrpcWeb(w, r)
-		http.HandlerFunc(g.handleGrpcWeb).ServeHTTP(w, r)
+		g.handleGrpcWeb(w, r)
 		return
 	}
 	g.srv.ServeHTTP(w, r)
 }
 
-func (g *grpcServer) handleGrpcWeb(w http.ResponseWriter, r *http.Request) {
+func (g *GrpcHandler) handleGrpcWeb(w http.ResponseWriter, r *http.Request) {
 
 	rw := g.pool.Get().(*grpcResponse)
 	rw.reset(w, r)

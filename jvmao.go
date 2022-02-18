@@ -31,7 +31,7 @@ func New() *Jvmao {
 		},
 		tcpAlivePeriod: time.Minute * 3,
 
-		grpc: newGrpcServer(),
+		grpc: NewGrpcHandler(),
 
 		renderer:        new(DefaultRenderer),
 		NotFoundHandler: defaultNotFoundHandler,
@@ -56,7 +56,7 @@ type Jvmao struct {
 	// listener       net.Listener
 	// tlsListener    net.Listener
 
-	grpc *grpcServer
+	grpc *GrpcHandler
 	// srv  *grpc.Server
 
 	hs             *http.Server
@@ -77,7 +77,7 @@ type Jvmao struct {
 func (jm *Jvmao) RegisterGrpcServer(s *grpc.Server) {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
-	jm.grpc.register(s)
+	jm.grpc.RegisterGrpcServer(s)
 }
 
 func (jm *Jvmao) SetRenderer(r Renderer) {
@@ -307,7 +307,7 @@ func (jm *Jvmao) Shutdown(ctx ctx.Context) error {
 // ServeHTTP implements http.Handler
 // more see [http.Handler]https://pkg.go.dev/net/http#Handler
 func (jm *Jvmao) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if jm.grpc.isGrpc(r) {
+	if IsGrpc(r) {
 		jm.grpc.ServeHTTP(w, r)
 		return
 	}
