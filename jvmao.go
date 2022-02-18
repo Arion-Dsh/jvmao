@@ -31,7 +31,7 @@ func New() *Jvmao {
 		},
 		tcpAlivePeriod: time.Minute * 3,
 
-		grpc: new(grpcServer),
+		grpc: newGrpcServer(),
 
 		renderer:        new(DefaultRenderer),
 		NotFoundHandler: defaultNotFoundHandler,
@@ -57,6 +57,7 @@ type Jvmao struct {
 	// tlsListener    net.Listener
 
 	grpc *grpcServer
+	// srv  *grpc.Server
 
 	hs             *http.Server
 	tlsHs          *http.Server
@@ -76,7 +77,7 @@ type Jvmao struct {
 func (jm *Jvmao) RegisterGrpcServer(s *grpc.Server) {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
-	jm.grpc.srv = s
+	jm.grpc.register(s)
 }
 
 func (jm *Jvmao) SetRenderer(r Renderer) {

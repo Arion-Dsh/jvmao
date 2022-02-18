@@ -6,5 +6,10 @@ protoc -I proto \
     proto/*.proto
 
 protoc -I proto \
-    --dart_out=grpc:proto \
+    --js_out=import_style=commonjs:static \
+    --grpc-web_out=import_style=commonjs,mode=grpcweb:static \
     proto/*.proto
+
+
+
+(cd ./static && ./generate.sh)

@@ -47,7 +47,7 @@ func (r *Response) Write(buf []byte) (n int, err error) {
 // status code.
 func (r *Response) WriteHeader(statusCode int) {
 	if r.wroteHeader {
-		r.jm.Logger.Warn(" superfluous Response.WriteHeader call.")
+		r.jm.Logger.Warn("jvmao: superfluous Response.WriteHeader call.")
 		return
 	}
 	r.Status = statusCode

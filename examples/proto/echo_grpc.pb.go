@@ -18,8 +18,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EchoClient interface {
-	// Sends a echo
 	Hello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
+	RepeatHello(ctx context.Context, in *RepeatHelloRequest, opts ...grpc.CallOption) (Echo_RepeatHelloClient, error)
+	StreamHello(ctx context.Context, opts ...grpc.CallOption) (Echo_StreamHelloClient, error)
 }
 
 type echoClient struct {
@@ -39,12 +40,76 @@ func (c *echoClient) Hello(ctx context.Context, in *HelloRequest, opts ...grpc.C
 	return out, nil
 }
 
+func (c *echoClient) RepeatHello(ctx context.Context, in *RepeatHelloRequest, opts ...grpc.CallOption) (Echo_RepeatHelloClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Echo_ServiceDesc.Streams[0], "/proto.Echo/RepeatHello", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &echoRepeatHelloClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Echo_RepeatHelloClient interface {
+	Recv() (*HelloReply, error)
+	grpc.ClientStream
+}
+
+type echoRepeatHelloClient struct {
+	grpc.ClientStream
+}
+
+func (x *echoRepeatHelloClient) Recv() (*HelloReply, error) {
+	m := new(HelloReply)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *echoClient) StreamHello(ctx context.Context, opts ...grpc.CallOption) (Echo_StreamHelloClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Echo_ServiceDesc.Streams[1], "/proto.Echo/StreamHello", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &echoStreamHelloClient{stream}
+	return x, nil
+}
+
+type Echo_StreamHelloClient interface {
+	Send(*HelloRequest) error
+	Recv() (*HelloReply, error)
+	grpc.ClientStream
+}
+
+type echoStreamHelloClient struct {
+	grpc.ClientStream
+}
+
+func (x *echoStreamHelloClient) Send(m *HelloRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *echoStreamHelloClient) Recv() (*HelloReply, error) {
+	m := new(HelloReply)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // EchoServer is the server API for Echo service.
 // All implementations must embed UnimplementedEchoServer
 // for forward compatibility
 type EchoServer interface {
-	// Sends a echo
 	Hello(context.Context, *HelloRequest) (*HelloReply, error)
+	RepeatHello(*RepeatHelloRequest, Echo_RepeatHelloServer) error
+	StreamHello(Echo_StreamHelloServer) error
 	mustEmbedUnimplementedEchoServer()
 }
 
@@ -54,6 +119,12 @@ type UnimplementedEchoServer struct {
 
 func (UnimplementedEchoServer) Hello(context.Context, *HelloRequest) (*HelloReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Hello not implemented")
+}
+func (UnimplementedEchoServer) RepeatHello(*RepeatHelloRequest, Echo_RepeatHelloServer) error {
+	return status.Errorf(codes.Unimplemented, "method RepeatHello not implemented")
+}
+func (UnimplementedEchoServer) StreamHello(Echo_StreamHelloServer) error {
+	return status.Errorf(codes.Unimplemented, "method StreamHello not implemented")
 }
 func (UnimplementedEchoServer) mustEmbedUnimplementedEchoServer() {}
 
@@ -86,6 +157,53 @@ func _Echo_Hello_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Echo_RepeatHello_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RepeatHelloRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EchoServer).RepeatHello(m, &echoRepeatHelloServer{stream})
+}
+
+type Echo_RepeatHelloServer interface {
+	Send(*HelloReply) error
+	grpc.ServerStream
+}
+
+type echoRepeatHelloServer struct {
+	grpc.ServerStream
+}
+
+func (x *echoRepeatHelloServer) Send(m *HelloReply) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Echo_StreamHello_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(EchoServer).StreamHello(&echoStreamHelloServer{stream})
+}
+
+type Echo_StreamHelloServer interface {
+	Send(*HelloReply) error
+	Recv() (*HelloRequest, error)
+	grpc.ServerStream
+}
+
+type echoStreamHelloServer struct {
+	grpc.ServerStream
+}
+
+func (x *echoStreamHelloServer) Send(m *HelloReply) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *echoStreamHelloServer) Recv() (*HelloRequest, error) {
+	m := new(HelloRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Echo_ServiceDesc is the grpc.ServiceDesc for Echo service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +216,18 @@ var Echo_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Echo_Hello_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "RepeatHello",
+			Handler:       _Echo_RepeatHello_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "StreamHello",
+			Handler:       _Echo_StreamHello_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "echo.proto",
 }

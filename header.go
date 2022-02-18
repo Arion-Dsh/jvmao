@@ -23,19 +23,28 @@ const (
 
 // Headers
 const (
-	HeaderContentEncoding    = "Content-Encoding"
-	HeaderContentLength      = "Content-Length"
-	HeaderContentType        = "Content-Type"
-	HeaderContentDisposition = "Content-Disposition"
+	HeaderContentExposeHeaders = "access-control-expose-headers"
+	HeaderContentEncoding      = "content-encoding"
+	HeaderContentLength        = "content-length"
+	HeaderContentType          = "content-type"
+	HeaderContentDisposition   = "content-disposition"
 
-	HeaderAuthorization   = "Authorization"
-	HeaderCookie          = "Cookie"
-	HeaderSetCookie       = "Set-Cookie"
-	HeaderWWWAuthenticate = "WWW-Authenticate"
+	HeaderAuthorization   = "authorization"
+	HeaderCookie          = "cookie"
+	HeaderSetCookie       = "set-cookie"
+	HeaderWWWAuthenticate = "www-authenticate"
 
-	HeaderXRealIP             = "X-Real-IP"
-	HeaderXRequestID          = "X-Request-ID"
-	HeaderXContentTypeOptions = "X-Content-Type-Options"
+	HeaderXRealIP             = "x-real-ip"
+	HeaderXRequestID          = "x-request-id"
+	HeaderXContentTypeOptions = "x-content-type-options"
 
-	HeaderLocation = "Location"
+	HeaderLocation = "location"
+
+	//Grpc Header
+	HeaderTe                 = "te"
+	HeaderGrpcAcceptEncoding = "grpc-accept-encoding"
+
+	//Header value
+	HeaderValueTrailers = "trailers"
+	HeaderValueIdentity = "identity"
 )

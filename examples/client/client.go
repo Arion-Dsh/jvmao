@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"time"
 
@@ -22,10 +24,10 @@ var (
 
 func main() {
 	flag.Parse()
-	// Set up a connection to the server.
+	// Set up a connection to the server.&
 	creds, _ := credentials.NewClientTLSFromFile("../server.crt", "127.0.0.1")
-	// conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(creds))
+	// conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -35,9 +37,23 @@ func main() {
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.Hello(ctx, &pb.HelloRequest{Name: *name})
+
+	r, err := c.Hello(ctx, &pb.HelloRequest{Name: "Arion"})
 	if err != nil {
 		log.Fatalf("could not echo: %v", err)
 	}
-	log.Printf("Echo: %s", r.GetMessage())
+
+	fmt.Printf("echo holle : %s \n", r.GetMessage())
+
+	s, err := c.RepeatHello(ctx, &pb.RepeatHelloRequest{Name: "Arion", Count: 2})
+	if err != nil {
+		log.Fatalf("could not echo: %v", err)
+	}
+	for {
+		rr, err := s.Recv()
+		if err == io.EOF {
+			return
+		}
+		fmt.Printf("echo stream : %s", rr.GetMessage())
+	}
 }
