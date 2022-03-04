@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
+	"io/fs"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -93,7 +95,10 @@ type Context interface {
 	Json(statusCode int, i interface{}) error
 
 	//File send a file response with status code
-	File(dir http.Dir, file string) error
+	File(file string, dir http.Dir) error
+
+	//FileFS send a file response with status code
+	FileFS(file string, fsys fs.FS) error
 
 	//Redirect to provided URL
 	Redirect(statusCode int, url string) error
@@ -258,8 +263,17 @@ func (c *context) Json(statusCode int, i interface{}) error {
 	return c.Blob(statusCode, MIMEApplicationJSONUTF8, b)
 }
 
+func (c *context) FileFS(file string, fsys fs.FS) error {
+	return c.openFile(file, http.FS(fsys))
+}
+
 //File send a file response with status code
-func (c *context) File(dir http.Dir, file string) error {
+func (c *context) File(file string, dir http.Dir) error {
+	fsys, _ := newCtxFS(dir).(fs.FS)
+	return c.openFile(file, http.FS(fsys))
+}
+
+func (c *context) openFile(file string, dir http.FileSystem) error {
 	const indexPage = "index.html"
 
 	f, err := dir.Open(file)
@@ -283,7 +297,12 @@ func (c *context) File(dir http.Dir, file string) error {
 		return err
 	}
 
-	http.ServeContent(c.w, c.r, file, fi.ModTime(), f)
+	ff, ok := f.(io.ReadSeeker)
+	if !ok {
+		return errors.New("file is not io.ReadSeeker")
+	}
+	http.ServeContent(c.w, c.r, file, fi.ModTime(), ff)
+
 	return nil
 }
 
@@ -311,4 +330,16 @@ func (c *context) reset(w http.ResponseWriter, r *http.Request) {
 	c.r = r
 	c.params = url.Values{}
 	c.data = map[string]interface{}{}
+}
+
+func newCtxFS(dir http.Dir) fs.FS {
+	return &ctxFS{dir}
+}
+
+type ctxFS struct {
+	http.Dir
+}
+
+func (f *ctxFS) Open(name string) (fs.File, error) {
+	return f.Dir.Open(name)
 }

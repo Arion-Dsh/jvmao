@@ -61,7 +61,7 @@ func (mux *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			err = NewHTTPError(http.StatusBadRequest, "invalid URL path")
 		} else {
 			p := strings.TrimPrefix(r.URL.Path, mux.sPrefix)
-			err = c.File(mux.sRoot, p)
+			err = c.File(p, mux.sRoot)
 			if err != nil {
 				err = NewHTTPErrorWithError(err)
 			}

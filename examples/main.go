@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/arion-dsh/jvmao"
 	pb "github.com/arion-dsh/jvmao/examples/proto"
+	"github.com/arion-dsh/jvmao/middleware"
 )
 
 func tM(next jvmao.HandlerFunc) jvmao.HandlerFunc {
@@ -59,6 +61,9 @@ func (e *echo) StreamHello(stream pb.Echo_StreamHelloServer) error {
 	}
 }
 
+//go:embed static/*  client/*
+var fs embed.FS
+
 func main() {
 	opts := []grpc.ServerOption{}
 	serv := grpc.NewServer(opts...)
@@ -70,16 +75,23 @@ func main() {
 	h := func(c jvmao.Context) error {
 		return c.String(http.StatusOK, "123")
 	}
-	// j.Use(middleware.Logger())
+
+	h2 := func(c jvmao.Context) error {
+		return c.FileFS("static/client.js", fs)
+	}
+
+	j.Use(middleware.Logger())
 	// j.Use(middleware.Recover())
 	j.Use(tM)
 
 	j.GET("home", "", h)
+	j.GET("client", "client", h2)
 
 	g := j.Group("/group")
 	g.GET("g-home", "", h)
 
 	j.Static("static/", "/static/")
+	j.FileFS("client/client.go", fs)
 
 	// j.Start(":8000")
 	j.StartTLS(":8000", "./server.crt", "./server.key")

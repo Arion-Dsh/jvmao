@@ -5,6 +5,7 @@ import (
 	ctx "context"
 	"crypto/tls"
 	"fmt"
+	"io/fs"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -101,9 +102,15 @@ func (jm *Jvmao) Static(root, prefix string) {
 	jm.mux.setStatic(root, prefix)
 }
 
-func (jm *Jvmao) File(file, path string) {
+func (jm *Jvmao) FileFS(file string, fsys fs.FS) {
 	jm.GET(file, file, func(c Context) error {
-		return c.File(http.Dir(filepath.Dir(path)), file)
+		return c.FileFS(file, fsys)
+	})
+}
+
+func (jm *Jvmao) File(file, dir string) {
+	jm.GET(file, file, func(c Context) error {
+		return c.File(file, http.Dir(filepath.Dir(dir)))
 	})
 }
 
