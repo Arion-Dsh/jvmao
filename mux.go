@@ -32,7 +32,6 @@ func (c *muxCtx) param(p string) {
 }
 
 func (c *muxCtx) reset() {
-	c.pValue = []string{}
 	c.handler = nil
 }
 

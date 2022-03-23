@@ -80,12 +80,17 @@ func main() {
 		return c.FileFS("static/client.js", fs)
 	}
 
+	h3 := func(c jvmao.Context) error {
+		return c.FileFS("static/grpc.html", fs)
+	}
+
 	j.Use(middleware.Logger())
 	// j.Use(middleware.Recover())
 	j.Use(tM)
 
 	j.GET("home", "", h)
 	j.GET("client", "client", h2)
+	j.GET("grpc", "grpc", h3)
 
 	g := j.Group("/group")
 	g.GET("g-home", "", h)

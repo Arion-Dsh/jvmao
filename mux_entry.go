@@ -10,7 +10,6 @@ type entryTyp uint8
 const (
 	typStatic entryTyp = iota // /home
 	typParam                  // /:id
-	typAll
 )
 
 type entry struct {
@@ -18,7 +17,7 @@ type entry struct {
 
 	pattern string
 	prefix  byte
-	sub     [typAll + 1]entries
+	sub     [typParam + 1]entries
 	es      *entity
 }
 
@@ -45,17 +44,18 @@ func (e *entry) match(ctx *muxCtx, path string) *entity {
 
 		switch entryTyp(typ) {
 		case typParam:
-			ps := strings.SplitN(path, "/", 2)
-			pattern := "*"
-			if len(ps) == 2 && len(ps[1]) > 0 {
-				pattern = "*/" + ps[1]
-			}
 			sub = ss.findSub('*')
-			if !strings.HasPrefix(pattern, sub.pattern) {
+			if sub == nil {
 				continue
 			}
-			path = strings.TrimPrefix(pattern, sub.pattern)
-			ctx.param(ps[0])
+			p := strings.IndexByte(path, '/')
+			if p > 0 {
+				ctx.param(path[:p])
+				path = path[p:]
+			} else {
+				ctx.param(path)
+				path = ""
+			}
 
 		default:
 			sub = ss.findSub(path[0])
@@ -206,18 +206,21 @@ func splitPat(p string) (t entryTyp, pp, next string) {
 		p = p[1:]
 	}
 
-	t = typStatic
-
 	// /saf/ :*/sdf
+	// /saf/:*
+	if strings.HasPrefix(p, "*") {
+		t = typParam
+		pp = "*"
+		next = p[1:]
+		return
+	}
+
+	t = typStatic
 	ps := strings.SplitN(p, ":", 2)
 	pp = ps[0]
 	if len(ps) == 2 {
 		next = ps[1]
 	}
-	if strings.HasPrefix(pp, "*") {
-		t = typParam
-	}
-
 	return
 
 }

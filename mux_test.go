@@ -13,7 +13,7 @@ func TestMux(t *testing.T) {
 	mux.handle("test1", "3", "/abc/:a/d", nil)
 	mux.handle("test2", "4", "/abc/abc/d", nil)
 	mux.handle("test3", "GET", "/abc/:a/b", nil)
-	if e := mux.root.match(mux.ctx, "/abc/123"); e != nil {
+	if e := mux.root.match(mux.ctx, "/abc/1234"); e != nil {
 		fmt.Println("ok:", e)
 	}
 }
@@ -72,7 +72,7 @@ func BenchmarkMux(b *testing.B) {
 	ctx := new(muxCtx)
 	for i := 0; i < b.N; i++ {
 		ctx.reset()
-		_ = et.match(ctx, "/abcd")
+		_ = et.match(ctx, "/a/bc/c")
 
 	}
 }

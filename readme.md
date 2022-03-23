@@ -20,6 +20,20 @@ look like:
     jm.Start(":8000")
 
 
-## notice
-unstable now.
+## gRPC-web
+ as we know, gRPC-web clients connect to gRPC services via a special proxy. such as Envoy.
+ jvmao improve a mini proxy for gRPC-web
+
+    serv := grpc.NewServer(opts...)
+
+    jm := jvmao.New()
+    jm.RegisterGrpcServer(serv)
+
+
+find the full code in examples.
+
+
+
+
+
 
