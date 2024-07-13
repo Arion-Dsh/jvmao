@@ -21,31 +21,31 @@ func (g *Group) Group(prefix string) *Group {
 	return gp
 }
 
-func (g *Group) CONNECT(name, pattern string, handler HandlerFunc) {
+func (g *Group) CONNECT(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodConnect, pattern, handler)
 }
-func (g *Group) HEAD(name, pattern string, handler HandlerFunc) {
+func (g *Group) HEAD(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodHead, pattern, handler)
 }
-func (g *Group) OPTIONS(name, pattern string, handler HandlerFunc) {
+func (g *Group) OPTIONS(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodOptions, pattern, handler)
 }
-func (g *Group) PATCH(name, pattern string, handler HandlerFunc) {
+func (g *Group) PATCH(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodPatch, pattern, handler)
 }
-func (g *Group) GET(name, pattern string, handler HandlerFunc) {
+func (g *Group) GET(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodGet, pattern, handler)
 }
-func (g *Group) POST(name, pattern string, handler HandlerFunc) {
+func (g *Group) POST(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodPost, pattern, handler)
 }
-func (g *Group) PUT(name, pattern string, handler HandlerFunc) {
+func (g *Group) PUT(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodPut, pattern, handler)
 }
-func (g *Group) DELETE(name, pattern string, handler HandlerFunc) {
+func (g *Group) DELETE(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodDelete, pattern, handler)
 }
-func (g *Group) TRACE(name, pattern string, handler HandlerFunc) {
+func (g *Group) TRACE(pattern, name string, handler HandlerFunc) {
 	g.handle(name, http.MethodTrace, pattern, handler)
 }
 

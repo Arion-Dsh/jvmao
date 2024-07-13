@@ -70,11 +70,11 @@ func bind(tag string, dest interface{}, c Context) error {
 		if vf.Kind() == reflect.Slice {
 			d := getSliceData(tag, fName, c)
 			if len(d) > 0 {
-				bindSliceField(vf, d)
+				_ = bindSliceField(vf, d)
 			}
 		} else {
 			d := getData(tag, fName, c)
-			bindField(vf, d)
+			_ = bindField(vf, d)
 		}
 	}
 
@@ -112,7 +112,7 @@ func bindField(v reflect.Value, data string) error {
 		if v.IsNil() {
 			v.Set(reflect.New(v.Type().Elem()))
 		}
-		bindField(v.Elem(), data)
+		_ = bindField(v.Elem(), data)
 	case reflect.String:
 		v.SetString(data)
 	case reflect.Bool:
@@ -220,8 +220,6 @@ func getSliceData(tag, key string, c Context) (d []string) {
 		d = c.QueryValues(key)
 	case "form":
 		d = c.FormValues(key)
-	case "param":
-		d = c.ParamValues(key)
 	default:
 		d = []string{}
 	}

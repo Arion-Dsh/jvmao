@@ -6,15 +6,15 @@ import (
 	"net/http"
 )
 
-func NewResponse(jm *Jvmao, w http.ResponseWriter) *Response {
-	return &Response{jm: jm, writer: w}
+func NewResponse(w http.ResponseWriter) *Response {
+	return &Response{writer: w}
 }
 
 // Response implements http.ResponseWriter/http.Flusher/http.Hijacker
 // to be used by an HTTP handler to construct an HTTP response .
 // more: [http.ResponseWriter](https://golang.org/pkg/net/http/#ResponseWriter)
 type Response struct {
-	jm     *Jvmao
+	// jm     *Jvmao
 	writer http.ResponseWriter
 
 	Status      int
@@ -47,7 +47,7 @@ func (r *Response) Write(buf []byte) (n int, err error) {
 // status code.
 func (r *Response) WriteHeader(statusCode int) {
 	if r.wroteHeader {
-		r.jm.Logger.Warn("jvmao: superfluous Response.WriteHeader call.")
+		// r.jm.Logger.Warn("jvmao: superfluous Response.WriteHeader call.")
 		return
 	}
 	r.Status = statusCode

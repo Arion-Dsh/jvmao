@@ -34,18 +34,10 @@ func NewHTTPErrorWithError(err error) error {
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 		msg, code = "404 page not found", http.StatusNotFound
-		break
 	case errors.Is(err, fs.ErrPermission):
 		msg, code = "403 Forbidden", http.StatusForbidden
-		break
 	default:
 		msg, code = "500 Internal Server Error", http.StatusInternalServerError
 	}
 	return NewHTTPError(code, msg)
-}
-
-func errHandler(err error) HandlerFunc {
-	return func(c Context) error {
-		return c.Error(err)
-	}
 }

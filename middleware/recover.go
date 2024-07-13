@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -28,9 +29,9 @@ func Recover() jvmao.MiddlewareFunc {
 					stack := debug.Stack()
 					s := fmt.Sprintf("[PANIC RECOVER] %v %s\n", err, stack)
 
-					c.Logger().Error(s)
+					// c.Logger().Error(s)
 
-					c.Error(err)
+					_ = c.Json(http.StatusInternalServerError, errors.New(s))
 
 				}
 			}()

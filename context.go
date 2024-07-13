@@ -23,6 +23,8 @@ type Context interface {
 	//Reverse the path with name.
 	Reverse(name string, params ...string) string
 
+	HanderValue(key string) string
+
 	Set(key string, value interface{})
 
 	Get(key string) interface{}
@@ -50,13 +52,9 @@ type Context interface {
 
 	// Param is the parameters in route pattern.
 	// such as "id" in /post/:id .
-	Param() url.Values
 
 	// ParamValue get the parameter.
 	ParamValue(key string) string
-
-	// ParamValue get the parameter.
-	ParamValues(key string) []string
 
 	// FormValue returns firs value with the given name.
 	// it calls ParseMultipartForm and ParseForm
@@ -78,7 +76,7 @@ type Context interface {
 	// it'll use the DefalultRenderer when the jumao's Renderer was not set
 	Render(statusCode int, tmpl string, data interface{}) (err error)
 
-	Error(err error) error
+	Error(statusCode int, err error) error
 
 	NoContent(statusCode int) error
 
@@ -103,18 +101,18 @@ type Context interface {
 	//Redirect to provided URL
 	Redirect(statusCode int, url string) error
 
-	Logger() Logger
+	// Logger() Logger
 }
 
 type context struct {
-	jm *Jvmao
-
 	r *http.Request
 	w *Response
 
 	params url.Values
 	data   map[string]interface{}
 	err    *HTTPError
+
+	route *routeChache
 }
 
 func (c *context) Request() *http.Request {
@@ -126,7 +124,12 @@ func (c *context) Response() *Response {
 }
 
 func (c *context) Reverse(name string, params ...string) string {
-	return c.jm.Reverse(name, params...)
+	// return c.jm.Reverse(name, params...)
+	return ""
+}
+
+func (c *context) HanderValue(key string) string {
+	return c.r.Header.Get(key)
 }
 
 func (c *context) Set(key string, value interface{}) {
@@ -174,7 +177,7 @@ func (c *context) Param() url.Values {
 }
 
 func (c *context) ParamValue(key string) string {
-	return c.params.Get(key)
+	return c.r.PathValue(key)
 }
 
 func (c *context) ParamValues(key string) []string {
@@ -182,21 +185,22 @@ func (c *context) ParamValues(key string) []string {
 }
 
 func (c *context) FormValue(name string) string {
-	c.ParseForm()
+	_ = c.ParseForm()
 	return c.r.PostFormValue(name)
 }
 
 func (c *context) FormValues(name string) []string {
 
-	c.ParseForm()
+	_ = c.ParseForm()
 
 	return c.r.PostForm[name]
 }
 
 func (c *context) FormFile(name string) (*multipart.FileHeader, error) {
+
 	f, fh, err := c.r.FormFile(name)
 	if err != nil {
-		return nil, err
+		return nil, http.ErrMissingFile
 	}
 	f.Close()
 	return fh, nil
@@ -210,24 +214,26 @@ func (c *context) ParseForm() error {
 	}
 }
 
-//Render render a template then send a HTML response with status code
+// Render render a template then send a HTML response with status code
 // it'll use the DefalultRenderer when the jumao's Renderer was not set
 func (c *context) Render(statusCode int, tmpl string, data interface{}) (err error) {
 
 	buf := new(bytes.Buffer)
 
-	if err = c.jm.renderer.Render(buf, tmpl, data, c); err != nil {
-		panic(err)
-	}
+	// if err = c.jm.renderer.Render(buf, tmpl, data, c); err != nil {
+	// 	panic(err)
+	// }
 
 	return c.Blob(statusCode, MIMETextHTMLUTF8, buf.Bytes())
 
 }
 
-func (c *context) Error(err error) error {
-	err = NewHTTPErrorWithError(err)
-	c.jm.HTTPErrHandler(err, c)
-	return nil
+func (c *context) Error(statusCode int, err error) error {
+	if _, ok := err.(*HTTPError); ok {
+		return err
+	}
+	err = NewHTTPError(statusCode, err.Error())
+	return err
 }
 
 func (c *context) NoContent(statusCode int) error {
@@ -253,12 +259,12 @@ func (c *context) Blob(statusCode int, contentType string, b []byte) (err error)
 	return
 }
 
-//Json send a json response with status code.
+// Json send a json response with status code.
 func (c *context) Json(statusCode int, i interface{}) error {
 
 	b, err := json.Marshal(i)
 	if err != nil {
-		return c.Error(err)
+		return c.Error(500, err)
 	}
 	return c.Blob(statusCode, MIMEApplicationJSONUTF8, b)
 }
@@ -267,10 +273,11 @@ func (c *context) FileFS(file string, fsys fs.FS) error {
 	return c.openFile(file, http.FS(fsys))
 }
 
-//File send a file response with status code
+// File send a file response with status code
 func (c *context) File(file string, dir http.Dir) error {
-	fsys, _ := newCtxFS(dir).(fs.FS)
-	return c.openFile(file, http.FS(fsys))
+	// fsys, _ := newCtxFS(dir).(fs.FS)
+	// return c.openFile(file, http.FS(fsys))
+	return nil
 }
 
 func (c *context) openFile(file string, dir http.FileSystem) error {
@@ -306,9 +313,9 @@ func (c *context) openFile(file string, dir http.FileSystem) error {
 	return nil
 }
 
-func (c *context) Logger() Logger {
-	return c.jm.Logger
-}
+/* func (c *context) Logger() Logger { */
+/* return c.jm.Logger */
+/* } */
 
 func (c *context) Redirect(statusCode int, url string) error {
 	if statusCode < 300 || statusCode > 308 {
@@ -332,14 +339,14 @@ func (c *context) reset(w http.ResponseWriter, r *http.Request) {
 	c.data = map[string]interface{}{}
 }
 
-func newCtxFS(dir http.Dir) fs.FS {
-	return &ctxFS{dir}
-}
+/* func newCtxFS(dir http.Dir) fs.FS { */
+/* return &ctxFS{dir} */
+/* } */
 
-type ctxFS struct {
-	http.Dir
-}
+/* type ctxFS struct { */
+/* http.Dir */
+/* } */
 
-func (f *ctxFS) Open(name string) (fs.File, error) {
-	return f.Dir.Open(name)
-}
+/* func (f *ctxFS) Open(name string) (fs.File, error) { */
+/* return f.Dir.Open(name) */
+/* } */

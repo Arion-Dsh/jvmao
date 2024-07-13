@@ -1,7 +1,6 @@
 package jvmao
 
 import (
-	"bytes"
 	ctx "context"
 	"crypto/tls"
 	"fmt"
@@ -20,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-//New return a instance of Jvmao.
+// New return a instance of Jvmao.
 func New() *Jvmao {
 	jm := &Jvmao{
 		hs:    new(http.Server),
@@ -34,31 +33,22 @@ func New() *Jvmao {
 
 		grpc: NewGrpcHandler(),
 
-		renderer:        new(DefaultRenderer),
-		NotFoundHandler: defaultNotFoundHandler,
-		HTTPErrHandler:  defaultHttpErrorHandler,
+		renderer: new(DefaultRenderer),
 	}
 	jm.Logger = DefaultLogger()
-	jm.pool = sync.Pool{New: func() interface{} {
-		return &context{jm: jm, w: NewResponse(jm, nil)}
-	}}
-	jm.mux = newMux(jm)
-
+	jm.mux = newMux()
+	jm.mux.httpErrHandler = DefaultHttpErrorHandler
+	jm.mux.notFoundHandler = DefaultNotFoundHandler
 	return jm
 }
 
 // Jumao top-level instance.
 type Jvmao struct {
-	mu   sync.Mutex
-	pool sync.Pool
+	mu sync.Mutex
 
 	mux *mux
 
-	// listener       net.Listener
-	// tlsListener    net.Listener
-
 	grpc *GrpcHandler
-	// srv  *grpc.Server
 
 	hs             *http.Server
 	tlsHs          *http.Server
@@ -66,13 +56,19 @@ type Jvmao struct {
 
 	tcpAlivePeriod time.Duration
 
-	middleware      []MiddlewareFunc
-	renderer        Renderer
-	NotFoundHandler HandlerFunc
-	HTTPErrHandler  HTTPErrorHandler
-	Logger          Logger
+	middleware []MiddlewareFunc
+	renderer   Renderer
+	Logger     *Logger
 
 	debug bool
+}
+
+func (jm *Jvmao) SetNotFoundHandler(h HandlerFunc) {
+	jm.mux.notFoundHandler = h
+}
+
+func (jm *Jvmao) SetHTTPErrorHandler(h HTTPErrorHandler) {
+	jm.mux.httpErrHandler = h
 }
 
 func (jm *Jvmao) RegisterGrpcServer(s *grpc.Server) {
@@ -95,11 +91,11 @@ func (jm *Jvmao) Group(prefix string) *Group {
 }
 
 func (jm *Jvmao) Static(root, prefix string) {
-	if !strings.HasPrefix(prefix, "/") {
-		prefix = "/" + prefix
-	}
+	// if !strings.HasPrefix(prefix, "/") {
+	// prefix = "/" + prefix
+	// }
 
-	jm.mux.setStatic(root, prefix)
+	// jm.mux.setStatic(root, prefix)
 }
 
 func (jm *Jvmao) FileFS(file string, fsys fs.FS) {
@@ -114,79 +110,40 @@ func (jm *Jvmao) File(file, dir string) {
 	})
 }
 
-func (jm *Jvmao) CONNECT(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) CONNECT(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodConnect, pattern, handler)
 }
-func (jm *Jvmao) HEAD(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) HEAD(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodHead, pattern, handler)
 }
-func (jm *Jvmao) OPTIONS(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) OPTIONS(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodOptions, pattern, handler)
 }
-func (jm *Jvmao) PATCH(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) PATCH(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodPatch, pattern, handler)
 }
-func (jm *Jvmao) GET(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) GET(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodGet, pattern, handler)
 }
-func (jm *Jvmao) POST(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) POST(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodPost, pattern, handler)
 }
-func (jm *Jvmao) PUT(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) PUT(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodPut, pattern, handler)
 }
-func (jm *Jvmao) DELETE(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) DELETE(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodDelete, pattern, handler)
 }
 
-func (jm *Jvmao) TRACE(name, pattern string, handler HandlerFunc) {
+func (jm *Jvmao) TRACE(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodTrace, pattern, handler)
 }
 
 func (jm *Jvmao) handle(name, method, pattern string, h HandlerFunc) {
 
-	if !strings.HasPrefix(pattern, "/") {
-		pattern = "/" + pattern
-	}
-
-	if name == "" {
-		name = fmt.Sprintf("%p%s", &h, pattern)
-	}
-
-	jm.mux.handle(name, method, pattern, h)
-}
-
-func (jm *Jvmao) Reverse(name string, params ...string) string {
-	uri := new(bytes.Buffer)
-
-	l := len(params)
-	if p, ok := jm.mux.routes[name]; ok {
-		c := strings.Count(p, ":")
-		if c != l {
-			panic(fmt.Sprintf("Reverse error: need %d params but get %d", c, l))
-		}
-		if l == 0 {
-			return p
-		}
-
-		// /sf/: id /:sdf/d
-		for i := 0; i < l; i++ {
-			ps := strings.SplitN(p, ":", 2)
-			uri.WriteString(ps[0])
-			uri.WriteString(fmt.Sprintf("%v", params[i]))
-			p = ps[1]
-			slash := strings.Index(p, "/")
-			if slash > 0 {
-				p = p[slash:]
-			}
-
-		}
-		if strings.HasPrefix(p, "/") {
-			uri.WriteString(p)
-		}
-	}
-
-	return uri.String()
+	p := fmt.Sprintf("%s %s", method, pattern)
+	h = applyMiddleware(h, jm.middleware...)
+	jm.mux.Handle(p, h)
 }
 
 // Debug show debug is open or not.
@@ -196,12 +153,12 @@ func (jm *Jvmao) Debug() bool {
 	return jm.debug
 }
 
-//Opendebug open debug.
+// Opendebug open debug.
 func (jm *Jvmao) OpenDebug() {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
 	jm.debug = true
-	jm.Logger.SetPriority(LOG_PRINT)
+	// jm.Logger.SetPriority(LOG_PRINT)
 }
 
 func (jm *Jvmao) SetTCPAlivePeriod(d time.Duration) {
@@ -212,7 +169,7 @@ func (jm *Jvmao) SetTCPAlivePeriod(d time.Duration) {
 
 }
 
-//Start start an http/2 server with h2c.
+// Start start an http/2 server with h2c.
 func (jm *Jvmao) Start(addr string) error {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
@@ -224,6 +181,7 @@ func (jm *Jvmao) Start(addr string) error {
 	if err != nil {
 		return err
 	}
+
 	return jm.hs.Serve(ln)
 
 }
@@ -236,7 +194,7 @@ func (jm *Jvmao) StartTLS(addr string, certFile, keyFile string) error {
 	jm.tlsHs.Addr = addr
 	jm.tlsHs.Handler = jm
 
-	http2.ConfigureServer(jm.tlsHs, &http2.Server{
+	_ = http2.ConfigureServer(jm.tlsHs, &http2.Server{
 		NewWriteScheduler: func() http2.WriteScheduler {
 			return http2.NewPriorityWriteScheduler(nil)
 		},
@@ -250,7 +208,7 @@ func (jm *Jvmao) StartTLS(addr string, certFile, keyFile string) error {
 	return jm.tlsHs.ServeTLS(ln, certFile, keyFile)
 }
 
-//StartAutoTLS start an HTTPS server using certificates automatically from https://letsencrypt.org.
+// StartAutoTLS start an HTTPS server using certificates automatically from https://letsencrypt.org.
 // you can change certificate with jm.AutoTLSManager before start
 // server, such as HostPolicy.
 // more [autocert.Manager]https://pkg.go.dev/golang.org/x/crypto/acme/autocert#Manager
@@ -273,7 +231,7 @@ func (jm *Jvmao) StartAutoTLS(addr string) error {
 
 	jm.tlsHs.TLSConfig.NextProtos = append(jm.tlsHs.TLSConfig.NextProtos, acme.ALPNProto)
 
-	http2.ConfigureServer(jm.tlsHs, &http2.Server{
+	_ = http2.ConfigureServer(jm.tlsHs, &http2.Server{
 		NewWriteScheduler: func() http2.WriteScheduler {
 			return http2.NewPriorityWriteScheduler(nil)
 		},
@@ -288,7 +246,7 @@ func (jm *Jvmao) StartAutoTLS(addr string) error {
 }
 
 // Shutdown stops the server gracefully.
-//calls `http.Server#Shutdown()`.
+// calls `http.Server#Shutdown()`.
 //
 // ie. look like:
 //
@@ -300,7 +258,6 @@ func (jm *Jvmao) StartAutoTLS(addr string) error {
 //	if err := jm.Shutdown(ctx); err != nil {
 //		jm.Logger.Fatal(err)
 //	}
-//
 func (jm *Jvmao) Shutdown(ctx ctx.Context) error {
 	jm.mu.Lock()
 	defer jm.mu.Unlock()
