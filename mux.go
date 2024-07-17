@@ -35,13 +35,9 @@ func (m *mux) Static(pattern, dir string) {
 }
 
 // Handle registers the handler for the given pattern.
-func (m *mux) Handle(pattern string, handlerFunc HandlerFunc) {
+func (m *mux) Handle(pattern, method string, handlerFunc HandlerFunc) {
 
 	m.serverMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
 		ctx := m.pool.Get().(*context)
 		defer m.pool.Put(ctx)
 		ctx.reset(w, r)

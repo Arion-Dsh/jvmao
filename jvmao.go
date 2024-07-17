@@ -143,9 +143,12 @@ func (jm *Jvmao) TRACE(pattern, name string, handler HandlerFunc) {
 
 func (jm *Jvmao) handle(_, method, pattern string, h HandlerFunc) {
 
-	p := fmt.Sprintf("%s %s", method, pattern)
+	if method == "" {
+		method = http.MethodGet
+	}
+	// p := fmt.Sprintf("%s %s", method, pattern)
 	h = applyMiddleware(h, jm.middleware...)
-	jm.mux.Handle(p, h)
+	jm.mux.Handle(pattern, method, h)
 }
 
 // Debug show debug is open or not.
