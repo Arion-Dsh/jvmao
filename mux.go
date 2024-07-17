@@ -25,14 +25,23 @@ func newMux() *mux {
 	mux.pool = sync.Pool{New: func() interface{} { return &context{w: NewResponse(nil), route: mux.route} }}
 	return mux
 }
+
 func (m *mux) SetRoute(name, pattern string) {
 	m.route.SetRoute(name, pattern)
+}
+
+func (m *mux) Static(pattern, dir string) {
+	m.serverMux.Handle(pattern, http.StripPrefix(pattern, http.FileServer(http.Dir(dir))))
 }
 
 // Handle registers the handler for the given pattern.
 func (m *mux) Handle(pattern string, handlerFunc HandlerFunc) {
 
 	m.serverMux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		ctx := m.pool.Get().(*context)
 		defer m.pool.Put(ctx)
 		ctx.reset(w, r)

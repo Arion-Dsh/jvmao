@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -90,12 +91,13 @@ func (jm *Jvmao) Group(prefix string) *Group {
 	return &Group{prefix: prefix, jm: jm}
 }
 
-func (jm *Jvmao) Static(root, prefix string) {
-	// if !strings.HasPrefix(prefix, "/") {
-	// prefix = "/" + prefix
-	// }
+func (jm *Jvmao) Static(prefix string, dir string) {
+	if !strings.HasPrefix(prefix, "/") {
+		prefix = "/" + prefix
+	}
+	dir = path.Dir(dir)
+	jm.mux.Static(prefix, dir)
 
-	// jm.mux.setStatic(root, prefix)
 }
 
 func (jm *Jvmao) FileFS(file string, fsys fs.FS) {
@@ -139,7 +141,7 @@ func (jm *Jvmao) TRACE(pattern, name string, handler HandlerFunc) {
 	jm.handle(name, http.MethodTrace, pattern, handler)
 }
 
-func (jm *Jvmao) handle(name, method, pattern string, h HandlerFunc) {
+func (jm *Jvmao) handle(_, method, pattern string, h HandlerFunc) {
 
 	p := fmt.Sprintf("%s %s", method, pattern)
 	h = applyMiddleware(h, jm.middleware...)
@@ -299,7 +301,7 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	if err != nil {
 		return
 	}
-	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(ln.alivePeriod)
+	_ = tc.SetKeepAlive(true)
+	_ = tc.SetKeepAlivePeriod(ln.alivePeriod)
 	return tc, nil
 }
