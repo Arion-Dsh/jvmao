@@ -22,7 +22,6 @@ import (
 //		TimeFormat: "2006-01-02 15:04:05.00000",
 //		Output:     os.Stdout,
 //	}
-//
 func Logger() jvmao.MiddlewareFunc {
 	return LoggerWithConfig(defaultLoggerConfig)
 }
@@ -87,9 +86,9 @@ func LoggerWithConfig(config LoggerConfig) jvmao.MiddlewareFunc {
 				wr.stop = time.Now()
 
 				t := template.Must(tmlp.Funcs(wr.mf()).Parse(f))
-				t.Execute(wr.buf, nil)
+				_ = t.Execute(wr.buf, nil)
 
-				config.Output.Write(wr.buf.Bytes())
+				_, _ = config.Output.Write(wr.buf.Bytes())
 
 				pool.Put(wr)
 
@@ -139,7 +138,7 @@ type loggerWR struct {
 	stop  time.Time
 	buf   *bytes.Buffer
 
-	tmpl *template.Template
+	// tmpl *template.Template
 }
 
 func (wr *loggerWR) mf() template.FuncMap {

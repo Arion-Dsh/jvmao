@@ -43,16 +43,16 @@ func TColorWrite(c TColor, useColor bool, s string, args ...interface{}) string 
 // TColor color in terminal, igonre in windows
 type TColor []byte
 
-//WriteIn write string in io.Writer with color
+// WriteIn write string in io.Writer with color
 func (c TColor) WriteIn(w io.Writer, useColor bool, s string, args ...interface{}) {
 	if isTTY && useColor {
-		w.Write(c)
+		_, _ = w.Write(c)
 	}
 	fmt.Fprintf(w, s, args...)
 
 	// reset
 	if isTTY && useColor {
-		w.Write([]byte{'\033', '[', '0', 'm'})
+		_, _ = w.Write([]byte{'\033', '[', '0', 'm'})
 	}
 }
 

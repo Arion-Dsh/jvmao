@@ -30,10 +30,6 @@ func (m *mux) SetRoute(name, pattern string) {
 	m.route.SetRoute(name, pattern)
 }
 
-func (m *mux) Static(pattern, dir string) {
-	m.serverMux.Handle(pattern, http.StripPrefix(pattern, http.FileServer(http.Dir(dir))))
-}
-
 // Handle registers the handler for the given pattern.
 func (m *mux) Handle(pattern, method string, handlerFunc HandlerFunc) {
 

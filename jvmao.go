@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -95,8 +94,10 @@ func (jm *Jvmao) Static(prefix string, dir string) {
 	if !strings.HasPrefix(prefix, "/") {
 		prefix = "/" + prefix
 	}
-	dir = path.Dir(dir)
-	jm.mux.Static(prefix, dir)
+	jm.GET(prefix, prefix, func(c Context) error {
+		fp := strings.TrimPrefix(c.Request().URL.Path, prefix)
+		return c.File(fp, http.Dir(dir))
+	})
 
 }
 

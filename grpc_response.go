@@ -118,10 +118,10 @@ func (r *grpcResponse) encodeHeaders() {
 
 		}
 
-		if strings.Contains(k, http2.TrailerPrefix) {
-			k = strings.Replace(k, http2.TrailerPrefix, "", 1)
+		// if strings.Contains(k, http2.TrailerPrefix) {
+		k = strings.Replace(k, http2.TrailerPrefix, "", 1)
 
-		}
+		// }
 		ks = append(ks, k)
 		wh[http.CanonicalHeaderKey(k)] = v
 	}

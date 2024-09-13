@@ -275,9 +275,8 @@ func (c *context) FileFS(file string, fsys fs.FS) error {
 
 // File send a file response with status code
 func (c *context) File(file string, dir http.Dir) error {
-	// fsys, _ := newCtxFS(dir).(fs.FS)
-	// return c.openFile(file, http.FS(fsys))
-	return nil
+	fsys := newCtxFS(dir)
+	return c.openFile(file, http.FS(fsys))
 }
 
 func (c *context) openFile(file string, dir http.FileSystem) error {
@@ -339,14 +338,14 @@ func (c *context) reset(w http.ResponseWriter, r *http.Request) {
 	c.data = map[string]interface{}{}
 }
 
-/* func newCtxFS(dir http.Dir) fs.FS { */
-/* return &ctxFS{dir} */
-/* } */
+func newCtxFS(dir http.Dir) fs.FS {
+	return &ctxFS{dir}
+}
 
-/* type ctxFS struct { */
-/* http.Dir */
-/* } */
+type ctxFS struct {
+	http.Dir
+}
 
-/* func (f *ctxFS) Open(name string) (fs.File, error) { */
-/* return f.Dir.Open(name) */
-/* } */
+func (f *ctxFS) Open(name string) (fs.File, error) {
+	return f.Dir.Open(name)
+}
