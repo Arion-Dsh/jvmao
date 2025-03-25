@@ -9,7 +9,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"strings"
 )
 
@@ -289,14 +288,8 @@ func (c *context) openFile(file string, dir http.FileSystem) error {
 	defer f.Close()
 	fi, err := f.Stat()
 	if fi.IsDir() {
-		file = filepath.Join(file, indexPage)
-		file = filepath.ToSlash(file)
-		f, err = dir.Open(file)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		fi, err = f.Stat()
+		http.NotFound(c.w, c.r)
+		return nil
 	}
 
 	if err != nil {

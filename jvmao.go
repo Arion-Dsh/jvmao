@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -96,7 +97,7 @@ func (jm *Jvmao) Static(prefix string, dir string) {
 	}
 	jm.GET(prefix, prefix, func(c Context) error {
 		fp := strings.TrimPrefix(c.Request().URL.Path, prefix)
-		return c.File(fp, http.Dir(dir))
+		return c.File(fp, http.Dir(path.Join(dir, prefix)))
 	})
 
 }

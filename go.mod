@@ -1,18 +1,19 @@
 module github.com/arion-dsh/jvmao
 
-go 1.22
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	golang.org/x/crypto v0.0.0-20220126234351-aa10faf2a1f8
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
-	google.golang.org/grpc v1.44.0
-	google.golang.org/protobuf v1.25.0
+	golang.org/x/crypto v0.36.0
+	golang.org/x/net v0.37.0
+	google.golang.org/grpc v1.71.0
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
-	github.com/golang/protobuf v1.4.3 // indirect
-	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
-	golang.org/x/text v0.3.6 // indirect
-	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 )
