@@ -88,12 +88,12 @@ func main() {
 	// j.Use(middleware.Recover())
 	j.Use(tM)
 
-	j.GET("home", "", h)
-	j.GET("client", "client", h2)
-	j.GET("grpc", "grpc", h3)
+	j.GET("/home", "home", h)
+	j.GET("/client", "client", h2)
+	j.GET("/grpc", "grpc", h3)
 
 	g := j.Group("/group")
-	g.GET("g-home", "", h)
+	g.GET("g-home", "/", h)
 
 	j.Static("static/", "/static/")
 	j.FileFS("client/client.go", fs)

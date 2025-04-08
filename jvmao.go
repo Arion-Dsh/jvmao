@@ -148,9 +148,9 @@ func (jm *Jvmao) handle(_, method, pattern string, h HandlerFunc) {
 	if method == "" {
 		method = http.MethodGet
 	}
-	// p := fmt.Sprintf("%s %s", method, pattern)
+	p := fmt.Sprintf("%s %s", method, pattern)
 	h = applyMiddleware(h, jm.middleware...)
-	jm.mux.Handle(pattern, method, h)
+	jm.mux.Handle(p, method, h)
 }
 
 // Debug show debug is open or not.
